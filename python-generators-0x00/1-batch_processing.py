@@ -45,11 +45,9 @@ def batch_processing(batch_size):
     Uses no more than 3 loops in total.
     """
     for batch in stream_users_in_batches(batch_size):
-        # First loop: filter users
-        filtered_users = [user for user in batch if user['age'] > 25]
+        # Filter users over 25
+        filtered = [user for user in batch if user['age'] > 25]
 
-        # Second loop: process and print users
-        for user in filtered_users:
+        # Print each filtered user
+        for user in filtered:
             print(user)
-
-        # No third loop needed — filtering and printing done
