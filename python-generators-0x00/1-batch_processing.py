@@ -51,3 +51,4 @@ def batch_processing(batch_size):
         # Print each filtered user
         for user in filtered:
             print(user)
+    return None
