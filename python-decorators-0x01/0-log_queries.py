@@ -1,19 +1,18 @@
 import sqlite3
 import functools
 
-# Decorator to log SQL queries
 def log_queries(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        # Assume the query is passed as a keyword argument or positional argument
-        query = kwargs.get('query') if 'query' in kwargs else args[0] if len(args) > 0 else None
-        
-        if query:
-            print(f"Executing SQL Query: {query}")
+        # Extract query from args or kwargs
+        if 'query' in kwargs:
+            sql_query = kwargs['query']
+        elif len(args) > 0:
+            sql_query = args[0]
         else:
-            print("Executing database function with no identifiable SQL query.")
+            sql_query = "Unknown query"
 
-        # Execute the original function
+        print(f"Executing SQL Query: {sql_query}")
         return func(*args, **kwargs)
     
     return wrapper
