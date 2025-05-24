@@ -24,3 +24,4 @@ with DatabaseConnection() as conn:
 
 # Print the fetched results
 print(results)
+
