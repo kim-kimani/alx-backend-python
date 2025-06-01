@@ -20,3 +20,4 @@ def fetch_all_users(query):
 
 # Example usage
 users = fetch_all_users(query="SELECT * FROM users")
+print(users)
