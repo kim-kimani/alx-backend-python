@@ -51,3 +51,37 @@ class TestGithubOrgClient(unittest.TestCase):
 
         # Assert the returned URL matches expected value
         self.assertEqual(result, expected_repos_url)
+        
+    @patch("client.get_json")
+    def test_public_repos(self, mock_get_json):
+        """Test public_repos returns correct list of repo names."""
+        # Define test payload and expected repo names
+        test_repos_payload = [
+            {"name": "episodes.dart", "license": {"key": "bsd-3-clause"}},
+            {"name": "cpp-netlib", "license": {"key": "bsl-1.0"}},
+            {"name": "dagger", "license": {"key": "apache-2.0"}},
+        ]
+        expected_repo_names = [repo["name"] for repo in test_repos_payload]
+
+        # Set mock_get_json to return the test payload
+        mock_get_json.return_value = test_repos_payload
+
+        # Create instance of GithubOrgClient
+        client = GithubOrgClient("google")
+
+        # Patch _public_repos_url to return a known URL
+        with patch.object(
+            GithubOrgClient,
+            "_public_repos_url",
+            new_callable=property
+        ) as mock_repos_url:
+            # Set the mocked repos URL
+            mock_repos_url.return_value = "https://api.github.com/orgs/google/repos" 
+
+            # Call public_repos
+            result = client.public_repos()
+
+        # Assertions
+        self.assertEqual(result, expected_repo_names)
+        mock_repos_url.assert_called_once()
+        mock_get_json.assert_called_once_with(mock_repos_url.return_value)
