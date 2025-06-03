@@ -6,6 +6,7 @@ from unittest.mock import patch, Mock
 from client import GithubOrgClient
 from fixtures import TEST_PAYLOAD
 from parameterized import parameterized_class
+from utils import access_nested_map
 
 
 @parameterized_class([
