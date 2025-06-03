@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+"""Unit tests for utils.py functions including access_nested_map, get_json, and memoize.
+
+This module contains unit tests for utility functions used throughout the application.
+The tests use parameterized inputs and mocking to ensure proper functionality without
+external calls.
+"""
+
 import unittest
 from parameterized import parameterized
 from unittest.mock import patch, Mock
@@ -26,7 +33,9 @@ class TestAccessNestedMap(unittest.TestCase):
         """Test access_nested_map raises KeyError for invalid paths."""
         with self.assertRaises(expected_exception) as context:
             access_nested_map(nested_map, path)
-        self.assertTrue(expected_message in str(context.exception))
+        self.assertTrue(
+            expected_message in str(context.exception)
+        )
 
 
 class TestGetJson(unittest.TestCase):
