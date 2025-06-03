@@ -3,9 +3,12 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer
+from .permissions import IsParticipantOfConversation
+
 
 class ConversationViewSet(viewsets.ModelViewSet):
     serializer_class = ConversationSerializer
+    permission_classes = [IsParticipantOfConversation]
 
     def get_queryset(self):
         return Conversation.objects.filter(participants=self.request.user)
@@ -28,13 +31,13 @@ class ConversationViewSet(viewsets.ModelViewSet):
 
 class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
+    permission_classes = [IsParticipantOfConversation]
 
     def get_queryset(self):
-        return Message.objects.filter(sender=self.request.user)
+        return Message.objects.filter(conversation__participants=self.request.user)
 
     def create(self, request, *args, **kwargs):
         conversation_id = request.data.get('conversation')
-        sender_id = request.user.id
         message_body = request.data.get('message_body')
 
         if not all([conversation_id, message_body]):
@@ -48,9 +51,13 @@ class MessageViewSet(viewsets.ModelViewSet):
         except Conversation.DoesNotExist:
             return Response({"error": "Conversation not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        # Ensure user is a participant
+        if request.user not in conversation.participants.all():
+            return Response({"error": "You are not a participant in this conversation"}, status=status.HTTP_403_FORBIDDEN)
+
         message = Message.objects.create(
             conversation=conversation,
-            sender_id=sender_id,
+            sender=request.user,
             message_body=message_body
         )
 
