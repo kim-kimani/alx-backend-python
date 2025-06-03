@@ -18,7 +18,7 @@ class TestGithubOrgClient(unittest.TestCase):
     @patch("client.get_json")
     def test_org(self, org_name, mock_get_json):
         """Test org returns correct payload from get_json."""
-        expected_url = f"https://api.github.com/orgs/{org_name}"
+        expected_url = f"https://api.github.com/orgs/{org_name}" 
         test_payload = {"login": org_name}
         mock_get_json.return_value = test_payload
         client = GithubOrgClient(org_name)
@@ -30,7 +30,7 @@ class TestGithubOrgClient(unittest.TestCase):
     def test_public_repos_url(self, mock_org):
         """Test _public_repos_url returns correct repos URL."""
         org_name = "google"
-        expected_url = "https://api.github.com/orgs/google/repos"
+        expected_url = "https://api.github.com/orgs/google/repos" 
         mock_org.return_value = {"repos_url": expected_url}
         client = GithubOrgClient(org_name)
         result = client._public_repos_url
@@ -53,12 +53,21 @@ class TestGithubOrgClient(unittest.TestCase):
             new_callable=PropertyMock
         ) as mock_url:
             mock_url.return_value = (
-                "https://api.github.com/orgs/google/repos"
+                "https://api.github.com/orgs/google/repos" 
             )
             result = client.public_repos()
         self.assertEqual(result, expected_names)
         mock_url.assert_called_once()
         mock_get_json.assert_called_once_with(mock_url.return_value)
+
+    @parameterized.expand([
+        ({"license": {"key": "my_license"}}, "my_license", True),
+        ({"license": {"key": "other_license"}}, "my_license", False),
+    ])
+    def test_has_license(self, repo, license_key, expected_result):
+        """Test has_license correctly checks if a repo has the specified license."""
+        result = GithubOrgClient.has_license(repo, license_key)
+        self.assertEqual(result, expected_result)
 
 
 if __name__ == "__main__":
