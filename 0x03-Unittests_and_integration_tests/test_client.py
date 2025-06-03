@@ -39,8 +39,11 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
 
         mock_response = Mock()
         mock_response.json.side_effect = get_json_side_effect
-        cls.mock_get.return_value = mock_response
+        mock_response.status_code = 200
+        mock_response.raise_for_status.return_value = None
 
+        cls.mock_get.return_value = mock_response
+        
     @classmethod
     def tearDownClass(cls):
         """Stop patching requests.get."""
