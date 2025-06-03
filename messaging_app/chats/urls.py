@@ -1,8 +1,8 @@
 # chats/urls.py
-from rest_framework import routers
+from rest_framework.routers import DefaultRouter, NestedDefaultRouter
 from .views import ConversationViewSet, MessageViewSet
 
-router = routers.DefaultRouter()
+router = DefaultRouter()
 router.register(r'conversations', ConversationViewSet)
 router.register(r'messages', MessageViewSet)
 
