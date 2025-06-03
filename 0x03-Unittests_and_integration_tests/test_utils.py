@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
-"""Unit tests for utils.py functions access_nested_map,
+"""Unit tests for utils.py functions including access_nested_map,
 get_json, and memoize.
 
-
-This module contains unit tests for utility functions used throughout the application.
-The tests use parameterized inputs and mocking to ensure proper functionality without
-external calls.
+This module contains unit tests for utility functions used throughout
+the application. The tests use parameterized inputs and mocking to ensure
+proper functionality without external calls.
 """
 
 import unittest
 from parameterized import parameterized
 from unittest.mock import patch, Mock
 from utils import access_nested_map, get_json, memoize
-
 
 class TestAccessNestedMap(unittest.TestCase):
     """Test cases for the access_nested_map function."""
@@ -39,7 +37,6 @@ class TestAccessNestedMap(unittest.TestCase):
             expected_message in str(context.exception)
         )
 
-
 class TestGetJson(unittest.TestCase):
     """Test cases for the get_json function."""
 
@@ -48,7 +45,8 @@ class TestGetJson(unittest.TestCase):
         ("http://holberton.io", {"payload": False})
     ])
     def test_get_json(self, test_url, test_payload):
-        """Test get_json returns expected payload without making real HTTP requests."""
+        """Test get_json returns expected payload without making real HTTP
+        requests."""
         with patch("utils.requests.get") as mock_get:
             mock_response = Mock()
             mock_response.json.return_value = test_payload
@@ -58,7 +56,6 @@ class TestGetJson(unittest.TestCase):
 
             mock_get.assert_called_once_with(test_url)
             self.assertEqual(result, test_payload)
-
 
 class TestMemoize(unittest.TestCase):
     """Test cases for the memoize decorator."""
@@ -82,7 +79,6 @@ class TestMemoize(unittest.TestCase):
             mock_method.assert_called_once()
             self.assertEqual(result1, 42)
             self.assertEqual(result2, 42)
-
 
 if __name__ == "__main__":
     unittest.main()
