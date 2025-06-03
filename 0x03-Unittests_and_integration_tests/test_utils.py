@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unit tests for utils.py functions including access_nested_map,
+"""Unit tests for utils.py functions access_nested_map,
 get_json, and memoize.
 
 
