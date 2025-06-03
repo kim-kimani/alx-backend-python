@@ -6,6 +6,8 @@ from unittest.mock import patch, Mock
 from client import GithubOrgClient
 from fixtures import TEST_PAYLOAD
 from parameterized import parameterized_class
+from utils import access_nested_map
+
 
 @parameterized_class([
     {
@@ -31,12 +33,13 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         cls.mock_get = cls.get_patcher.start()
 
         def get_json_side_effect(url):
-            """Mock JSON response based on the URL."""
-            if url == "https://api.github.com/orgs/test-org/repos":
+            if url == cls.org_payload["repos_url"]:
                 return cls.repos_payload
-            return Mock()
+            return {}
 
-        cls.mock_get.return_value.json.side_effect = get_json_side_effect
+        mock_response = Mock()
+        mock_response.json.side_effect = get_json_side_effect
+        cls.mock_get.return_value = mock_response
 
     @classmethod
     def tearDownClass(cls):
@@ -45,16 +48,12 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
 
     def test_public_repos(self):
         """Test that public_repos returns correct repository names."""
-        client = GithubOrgClient("test-org")
+        client = GithubOrgClient(self.org_payload["login"])
         repos = client.public_repos()
         self.assertEqual(repos, self.expected_repos)
 
     def test_public_repos_with_license(self):
         """Test public_repos filters repositories by license."""
-        client = GithubOrgClient("test-org")
+        client = GithubOrgClient(self.org_payload["login"])
         repos = client.public_repos(license="apache-2.0")
         self.assertEqual(repos, self.apache2_repos)
-
-if __name__ == "__main__":
-    unittest.main()
-
