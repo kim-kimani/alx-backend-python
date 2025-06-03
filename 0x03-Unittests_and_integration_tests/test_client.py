@@ -3,7 +3,7 @@
 """
 
 import unittest
-from unittest.mock import patch, Mock, MagicMock
+from unittest.mock import patch, Mock
 from client import GithubOrgClient
 from fixtures import TEST_PAYLOAD
 from parameterized import parameterized_class
@@ -11,15 +11,12 @@ from parameterized import parameterized_class
 
 @parameterized_class([
     {
-        "org_payload": payload,
-        "repos_payload": repos,
-        "expected_repos": [repo["name"] for repo in repos],
-        "apache2_repos": [
-            repo["name"] for repo in repos
-            if access_nested_map(repo, ("license", "key")) == "apache-2.0"
-        ]
+        "org_payload": org_payload,
+        "repos_payload": repos_payload,
+        "expected_repos": expected_repos,
+        "apache2_repos": apache2_repos
     }
-    for payload, repos in TEST_PAYLOAD
+    for org_payload, repos_payload, expected_repos, apache2_repos in TEST_PAYLOAD
 ])
 class TestIntegrationGithubOrgClient(unittest.TestCase):
     """Integration tests for GithubOrgClient using fixtures."""
@@ -34,9 +31,9 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         def get_json_side_effect(url):
             if url == cls.org_payload["repos_url"]:
                 return cls.repos_payload
-            return None
+            return {}
 
-        mock_response = MagicMock()
+        mock_response = Mock()
         mock_response.json.side_effect = get_json_side_effect
         cls.mock_get.return_value = mock_response
 
@@ -57,4 +54,5 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
             client.public_repos(license="apache-2.0"),
             self.apache2_repos
         )
+        
         
