@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""Unit tests for the GithubOrgClient class.
+"""Unit tests for GithubOrgClient class.
 """
 
-import unittest
-from parameterized import parameterized
-from unittest.mock import patch, Mock
 from client import GithubOrgClient
+from unittest import TestCase
+from unittest.mock import patch, Mock
+from parameterized import parameterized
 
 
-class TestGithubOrgClient(unittest.TestCase):
-    """Test cases for GithubOrgClient class."""
+class TestGithubOrgClient(TestCase):
+    """Test cases for GithubOrgClient.org property."""
 
     @parameterized.expand([
         ("google",),
@@ -17,11 +17,10 @@ class TestGithubOrgClient(unittest.TestCase):
     ])
     @patch("client.get_json")
     def test_org(self, org_name, mock_get_json):
-        """Test that GithubOrgClient.org returns the correct value."""
+        """Test that GithubOrgClient.org returns the expected payload."""
         # Arrange
         expected_url = f"https://api.github.com/orgs/{org_name}" 
         test_payload = {"login": org_name}
-
         mock_get_json.return_value = test_payload
 
         # Act
