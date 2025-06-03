@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from .models import Conversation, Message, User
 from .serializers import ConversationSerializer, MessageSerializer
+from rest_framework import viewsets, status, filters
 
 class ConversationViewSet(viewsets.ModelViewSet):
     queryset = Conversation.objects.all()
