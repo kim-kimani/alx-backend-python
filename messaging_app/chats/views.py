@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer
 from .permissions import IsParticipantOfConversation
+from .filters import MessageFilter
+
 
 
 class ConversationViewSet(viewsets.ModelViewSet):
@@ -11,7 +13,9 @@ class ConversationViewSet(viewsets.ModelViewSet):
     permission_classes = [IsParticipantOfConversation]
 
     def get_queryset(self):
-        return Conversation.objects.filter(participants=self.request.user)
+        return Message.objects.filter(
+            conversation__participants=self.request.user
+        ).select_related('conversation', 'sender').order_by('-sent_at')
 
     def create(self, request, *args, **kwargs):
         participants = request.data.get('participants', [])
@@ -32,6 +36,9 @@ class ConversationViewSet(viewsets.ModelViewSet):
 class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
     permission_classes = [IsParticipantOfConversation]
+    filterset_class = MessageFilter
+    ordering_fields = ['sent_at']
+    ordering = ['-sent_at']
 
     def get_queryset(self):
         return Message.objects.filter(conversation__participants=self.request.user)
