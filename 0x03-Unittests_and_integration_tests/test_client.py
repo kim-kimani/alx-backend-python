@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-"""Integration tests for GithubOrgClient class using fixtures.
-"""
 
 import unittest
-from unittest.mock import patch, Mock, MagicMock
+from unittest.mock import patch
 from client import GithubOrgClient
 from fixtures import TEST_PAYLOAD
 from parameterized import parameterized_class
@@ -14,7 +12,11 @@ from parameterized import parameterized_class
         "org_payload": payload,
         "repos_payload": repos,
         "expected_repos": [repo["name"] for repo in repos],
-        "apache2_repos": [repo["name"] for repo in repos if access_nested_map(repo, ("license", "key")) == "apache-2.0"]
+        "apache2_repos": [
+            repo["name"]
+            for repo in repos
+            if repo.get("license", {}).get("key") == "apache-2.0"
+        ]
     }
     for payload, repos in TEST_PAYLOAD
 ])
@@ -23,29 +25,27 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        """Set up mock for requests.get to return fixture payloads."""
-        def get_json_side_effect(url):
-            return cls.repos_payload if url == cls.org_payload["repos_url"] else None
-
-        cls.get_patcher = patch("client.requests.get")
-        cls.mock_get = cls.get_patcher.start()
-
-        # Configure side effect to return appropriate JSON based on URL
-        cls.mock_get.return_value = MagicMock()
-        cls.mock_get.return_value.json.side_effect = get_json_side_effect
+        """Patch get_json to return fixture payloads in sequence."""
+        cls.get_patcher = patch("client.get_json", side_effect=[
+            cls.org_payload,
+            cls.repos_payload
+        ])
+        cls.mock_get_json = cls.get_patcher.start()
 
     @classmethod
     def tearDownClass(cls):
-        """Stop the requests.get patcher."""
+        """Stop get_json patcher."""
         cls.get_patcher.stop()
 
     def test_public_repos(self):
-        """Test public_repos returns expected list of repository names."""
+        """Test public_repos returns all expected repositories."""
         client = GithubOrgClient(self.org_payload["login"])
         self.assertEqual(client.public_repos(), self.expected_repos)
 
     def test_public_repos_with_license(self):
-        """Test public_repos with license filter returns correct subset."""
+        """Test public_repos filters repositories by license."""
         client = GithubOrgClient(self.org_payload["login"])
-        self.assertEqual(client.public_repos(license="apache-2.0"), self.apache2_repos)
-        
+        self.assertEqual(
+            client.public_repos(license="apache-2.0"),
+            self.apache2_repos
+        )
