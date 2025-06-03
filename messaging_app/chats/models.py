@@ -30,6 +30,7 @@ class Message(models.Model):
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE)
     sender = models.ForeignKey(User, on_delete=models.CASCADE)
     message_body = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
     sent_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
