@@ -44,12 +44,9 @@ INSTALLED_APPS = [
     'chats.apps.ChatsConfig',
     'rest_framework_simplejwt',
     'django_filters',
-    'apps.core',
 ]
 
 MIDDLEWARE = [
-    'chats.middleware.RestrictAccessByTimeMiddleware',
-    'chats.middleware.RequestLoggingMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
