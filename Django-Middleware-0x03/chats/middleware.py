@@ -1,44 +1,87 @@
-import time
+# chats/middleware.py
+import logging
+from datetime import datetime
+from django.http import HttpResponseForbidden
 from django.http import JsonResponse
-from django.utils.deprecation import MiddlewareMixin
 
-class RateLimitMiddleware(MiddlewareMixin):
+logger = logging.getLogger(__name__)
+handler = logging.FileHandler('requests.log')  # <- This file
+formatter = logging.Formatter('%(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
+
+class RequestLoggingMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
-        # Dictionary to store request timestamps by IP
-        self.request_logs = {}  # { "ip": [timestamp1, timestamp2, ...] }
 
     def __call__(self, request):
-        ip = self._get_client_ip(request)
+        user = request.user if request.user.is_authenticated else 'Anonymous'
+        logger.info(f"{datetime.now()} - User: {user} - Path: {request.path}")
+        return self.get_response(request)
 
-        # Only rate-limit POST requests to chat endpoints
-        if request.path.startswith('/api/messages/') and request.method == 'POST':
-            now = time.time()
-            window_start = now - 60  # 1 minute window
 
-            # Initialize log for this IP if not present
-            if ip not in self.request_logs:
-                self.request_logs[ip] = []
+class RestrictAccessByTimeMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
 
-            # Keep only requests within the last 60 seconds
-            self.request_logs[ip] = [t for t in self.request_logs[ip] if t >= window_start]
+    def __call__(self, request):
+        # Only apply restriction on /chats/ path (optional)
+        if request.path.startswith('/chats/'):
+            now = datetime.now().time()
+            allowed_start = now.replace(hour=18, minute=0, second=0, microsecond=0)
+            allowed_end = now.replace(hour=21, minute=0, second=0, microsecond=0)
 
-            if len(self.request_logs[ip]) >= 5:
-                return JsonResponse({
-                    'error': 'Too many requests. You can send up to 5 messages per minute.'
-                }, status=429)
+            if not (allowed_start <= now <= allowed_end):
+                return HttpResponseForbidden("Access to chats is restricted outside 6PM–9PM")
 
-            # Record this request
-            self.request_logs[ip].append(now)
+        return self.get_response(request)
 
-        response = self.get_response(request)
-        return response
+class OffensiveLanguageMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+        self.ip_tracker = {}  # {ip: [(timestamp1), (timestamp2), ...]}
 
-    def _get_client_ip(self, request):
-        """Helper to extract client IP from request"""
+    def __call__(self, request):
+        if request.path.startswith('/chat/') and request.method == 'POST':
+            ip = self.get_client_ip(request)
+            current_time = time.time()
+            request_times = self.ip_tracker.get(ip, [])
+
+            # Filter timestamps within the last 60 seconds
+            request_times = [t for t in request_times if current_time - t < 60]
+
+            if len(request_times) >= 5:
+                return JsonResponse(
+                    {'error': 'Rate limit exceeded: Max 5 messages per minute'},
+                    status=429
+                )
+
+            request_times.append(current_time)
+            self.ip_tracker[ip] = request_times
+
+        return self.get_response(request)
+
+    def get_client_ip(self, request):
+        """Extract client IP address from request."""
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0].strip()
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
+            return x_forwarded_for.split(',')[0].strip()
+        return request.META.get('REMOTE_ADDR')
+
+
+class RolepermissionMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        # Optional: scope to certain endpoints like /chat/
+        if request.path.startswith('/chat/'):
+            if request.user.is_authenticated:
+                role = getattr(request.user, 'role', None)
+                if role not in ['admin', 'moderator']:
+                    return HttpResponseForbidden("403 Forbidden: Insufficient permissions.")
+            else:
+                return HttpResponseForbidden("403 Forbidden: Authentication required.")
+        
+        return self.get_response(request)

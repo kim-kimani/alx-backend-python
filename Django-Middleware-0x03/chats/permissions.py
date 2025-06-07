@@ -1,23 +1,32 @@
-# chats/permissions.py
-from rest_framework import permissions
-from .models import Conversation, Message
+# messaging_app/chats/permissions.py
 
-class IsParticipantOfConversation(permissions.BasePermission):
+from rest_framework.permissions import BasePermission, SAFE_METHODS
+
+class IsOwnerOrReadOnly(BasePermission):
     """
-    Custom permission to only allow participants of a conversation to access or modify messages/conversations.
+    Custom permission to only allow owners of an object to edit it.
+    """
+    def has_object_permission(self, request, view, obj):
+        if request.method in ('GET', 'HEAD', 'OPTIONS'):
+            return True
+        return obj.owner == request.user
+
+
+from rest_framework.permissions import BasePermission, SAFE_METHODS
+
+class IsParticipantOfConversation(BasePermission):
+    """
+    Custom permission to allow only participants of a conversation to access messages.
     """
 
     def has_permission(self, request, view):
+        # Allow only authenticated users
         return request.user and request.user.is_authenticated
 
     def has_object_permission(self, request, view, obj):
-        # All participants can read
-        if request.method in permissions.SAFE_METHODS:
-            if isinstance(obj, (Message, Conversation)):
-                return request.user in obj.participants.all()
-        
-        # For PUT, PATCH, DELETE, ensure user is participant
-        elif isinstance(obj, (Message, Conversation)):
-            return request.user in obj.participants.all()
-
-        return False
+        """
+        Called for object-level permissions (e.g., retrieving, updating or deleting a message)
+        Assumes obj is a Message instance
+        """
+        # Only participants of the conversation can access the message
+        return request.user in obj.conversation.participants.all()
