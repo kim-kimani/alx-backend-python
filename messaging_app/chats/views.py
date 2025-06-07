@@ -1,21 +1,20 @@
 # chats/views.py
-from rest_framework import viewsets, status, permissions
+from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer
 from .permissions import IsParticipantOfConversation
 from .filters import MessageFilter
-
+from .pagination import StandardResultsSetPagination
 
 
 class ConversationViewSet(viewsets.ModelViewSet):
     serializer_class = ConversationSerializer
     permission_classes = [permissions.IsAuthenticated, IsParticipantOfConversation]
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        return Message.objects.filter(
-            conversation__participants=self.request.user
-        ).select_related('conversation', 'sender').order_by('-sent_at')
+        return Conversation.objects.filter(participants=self.request.user).prefetch_related('participants')
 
     def create(self, request, *args, **kwargs):
         participants = request.data.get('participants', [])
@@ -39,6 +38,7 @@ class MessageViewSet(viewsets.ModelViewSet):
     filterset_class = MessageFilter
     ordering_fields = ['sent_at']
     ordering = ['-sent_at']
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         return Message.objects.filter(conversation__participants=self.request.user)
@@ -54,11 +54,10 @@ class MessageViewSet(viewsets.ModelViewSet):
             )
 
         try:
-            conversation = Conversation.objects.get(conversation_id=conversation_id)
+            conversation = Conversation.objects.get(id=conversation_id)
         except Conversation.DoesNotExist:
             return Response({"error": "Conversation not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Ensure user is a participant
         if request.user not in conversation.participants.all():
             return Response({"error": "You are not a participant in this conversation"}, status=status.HTTP_403_FORBIDDEN)
 
